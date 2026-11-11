@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TikTok City · Live Control</title>
+  <style>
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #101d1e;
+      color: #eff8ed;
+      font: 16px system-ui, -apple-system, sans-serif;
+      display: grid;
+      place-items: center;
+      padding: 24px
+    }
+
+    .panel {
+      width: min(620px, 100%);
+      background: #1d3030;
+      border: 1px solid #ffffff20;
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: 0 18px 60px #0005
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 26px
+    }
+
+    .muted {
+      color: #b6c9c4;
+      font-size: 14px
+    }
+
+    .status {
+      margin: 22px 0;
+      padding: 16px;
+      border-radius: 14px;
+      background: #102020
+    }
+
+    .state {
+      font-size: 20px;
+      font-weight: 800
+    }
+
+    .connector {
+      margin-top: 9px;
+      font-size: 13px;
+      color: #b6c9c4
+    }
+
+    .connector.connected {
+      color: #a7e3a3
+    }
+
+    .connector.reconnecting {
+      color: #ffd88e
+    }
+
+    .connector-detail {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #ffd88e
+    }
+
+    .help {
+      font-size: 12px;
+      margin: 5px 0 0;
+      color: #b6c9c4
+    }
+
+    .help a {
+      color: #a7e3a3
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px
+    }
+
+    .stat {
+      background: #263c3a;
+      padding: 12px;
+      border-radius: 12px
+    }
+
+    .stat small {
+      display: block;
+      color: #b6c9c4;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em
+    }
+
+    .stat strong {
+      font-size: 18px
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin: 18px 0
+    }
+
+    button,
+    a.button {
+      font: inherit;
+      font-weight: 800;
+      border: 0;
+      border-radius: 11px;
+      padding: 12px 16px;
+      text-decoration: none;
+      cursor: pointer
+    }
+
+    .start {
+      background: #a7e3a3;
+      color: #142718
+    }
+
+    .end {
+      background: #f2ad83;
+      color: #30190f
+    }
+
+    .end:disabled,
+    .start:disabled {
+      opacity: .4;
+      cursor: not-allowed
+    }
+
+    .links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .button {
+      background: #354c49;
+      color: #e9f5ed
+    }
+
+    .notice {
+      min-height: 22px;
+      margin: 8px 0;
+      color: #ffd88e;
+      font-size: 13px
+    }
+
+    @media(max-width:480px) {
+      .stats {
+        grid-template-columns: 1fr
+      }
+
+      .actions button {
+        flex: 1
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="panel">
+    <h1>🏙️ TikTok City · Live Control</h1>
+    <div class="muted">ควบคุมสถิติของไลฟ์นี้ เมืองและอาคารที่สะสมไว้จะไม่ถูกรีเซ็ต</div>
+    <section class="status" aria-live="polite">
+      <div id="state" class="state">กำลังเชื่อมต่อ…</div>
+      <div id="session-copy" class="muted">รอสถานะเมือง</div>
+      <div id="connector" class="connector">TikFinity: กำลังเชื่อมต่อ…</div>
+      <div id="connector-help" class="help">ยังไม่เชื่อมต่อ? เปิด TikFinity Desktop และทำ Setup ให้เสร็จ · <a
+          href="https://tikfinity.zerody.one/de/tiktok/actionsandevents" target="_blank" rel="noreferrer">คำแนะนำ Event
+          API</a></div>
+      <div id="connector-detail" class="connector-detail" aria-live="polite"></div>
+      <div id="backup-status" class="connector">กำลังตรวจไฟล์สำรองเมือง…</div>
+      <div class="stats">
+        <div class="stat"><small>Live City Coins</small><strong id="live-coins">0</strong></div>
+        <div class="stat"><small>Live Population</small><strong id="live-population">0</strong></div>
+        <div class="stat"><small>Gifts</small><strong id="live-gifts">0</strong></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><small>Saved Citizens</small><strong id="city-population">0</strong></div>
+        <div class="stat"><small>Saved City Coins</small><strong id="city-coins">0</strong></div>
+        <div class="stat"><small>City Level</small><strong id="city-level">1</strong></div>
+      </div>
+    </section>
+    <div class="actions">
+      <button id="start" class="start" disabled>เริ่ม Live</button>
+      <button id="end" class="end" disabled>จบ Live</button>
+    </div>
+    <div id="notice" class="notice"></div>
+    <div class="links"><a class="button" href="/" target="_blank" rel="noreferrer">เปิด OBS Overlay</a><a class="button"
+        href="/?preview=1" target="_blank" rel="noreferrer">เปิด Gift Preview</a></div>
+    <p class="muted">หน้านี้ควบคุมได้จากเครื่องที่รันเซิร์ฟเวอร์เท่านั้น · กด “เริ่ม Live” ก่อนเริ่มสตรีม และ “จบ Live”
+      หลังจบสตรีม</p>
+  </main>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io(), $ = id => document.getElementById(id); let isLive = false;
+    const number = n => (Number(n) || 0).toLocaleString();
+    function renderBackup(backup) { $('backup-status').textContent = backup ? `สำรองล่าสุด: ${new Date(backup.modifiedAt).toLocaleString()} · ${(backup.bytes / 1024).toFixed(0)} KB` : 'ยังไม่มีไฟล์สำรองเมือง'; }
+    function render(s) { isLive = Boolean(s.isLive); const live = s.liveSession, connector = s.tikFinityStatus || 'connecting'; $('state').textContent = isLive ? '🟢 Live กำลังทำงาน' : '⚪ ยังไม่ได้เริ่ม Live'; $('session-copy').textContent = live ? `เริ่มเมื่อ ${new Date(live.startedAt).toLocaleString()}` : 'เริ่ม Live เพื่อเริ่มนับสถิติใหม่'; $('connector').textContent = `TikFinity: ${{ connected: 'เชื่อมต่อแล้ว', connecting: 'กำลังเชื่อมต่อ…', reconnecting: 'กำลังเชื่อมต่อใหม่…' }[connector] || 'ไม่ทราบสถานะ'}`; $('connector').className = `connector ${connector}`; $('connector-detail').textContent = s.tikFinityMessage || ''; $('live-coins').textContent = number(live?.coins); $('live-population').textContent = number(live?.population); $('live-gifts').textContent = number(live?.gifts); $('city-population').textContent = number(s.population); $('city-coins').textContent = number(s.coins); $('city-level').textContent = number(s.level); $('start').disabled = isLive; $('end').disabled = !isLive }
+    socket.on('city:state', render); fetch('/api/city').then(r => r.json()).then(render).catch(() => { $('state').textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้' });
+    function refreshBackup() { fetch('/api/backups/latest').then(r => r.json()).then(data => renderBackup(data.latest)).catch(() => { $('backup-status').textContent = 'ตรวจไฟล์สำรองไม่ได้' }) }
+    refreshBackup(); socket.on('backup:status', event => { $('backup-status').textContent = event.status === 'running' ? 'กำลังสร้างไฟล์สำรอง…' : event.status === 'failed' ? `สำรองเมืองไม่สำเร็จ: ${event.message}` : 'สร้างไฟล์สำรองเมืองสำเร็จ'; if (event.status === 'completed') refreshBackup(); });
+    async function setLive(action) { $('notice').textContent = ''; try { const response = await fetch(`/api/live/${action}`, { method: 'POST' }), data = await response.json(); if (!response.ok) throw new Error(data.error || 'Request failed'); render(data.snapshot); $('notice').textContent = action === 'start' ? 'เริ่มนับสถิติ Live ใหม่แล้ว อาคารเดิมยังอยู่ครบ' : 'จบ Live แล้ว บันทึกเมืองและเริ่มสร้างไฟล์สำรองอัตโนมัติ'; } catch (error) { $('notice').textContent = `ทำรายการไม่สำเร็จ: ${error.message}` } }
+    $('start').addEventListener('click', () => setLive('start')); $('end').addEventListener('click', () => setLive('end'));
+  </script>
+</body>
+
+</html>

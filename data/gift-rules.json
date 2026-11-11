@@ -1,0 +1,53 @@
+{
+  "rose": { "building": "house", "label": "บ้าน", "coins": 5, "population": 5 },
+  "heart": {
+    "building": "shop",
+    "label": "ร้านค้า",
+    "coins": 10,
+    "population": 10
+  },
+  "perfume": {
+    "building": "school",
+    "label": "โรงเรียน",
+    "coins": 100,
+    "population": 50
+  },
+  "sunglasses": {
+    "building": "park",
+    "label": "สวนสาธารณะ",
+    "coins": 100,
+    "population": 30
+  },
+  "gg": {
+    "building": "hospital",
+    "label": "โรงพยาบาล",
+    "coins": 500,
+    "population": 100
+  },
+  "galaxy": {
+    "building": "mall",
+    "buildings": ["mall", "airport", "bridge"],
+    "label": "แลนด์มาร์ก: ห้าง สนามบิน และสะพาน",
+    "coins": 1000,
+    "population": 250
+  },
+  "universe": {
+    "building": "skyscraper",
+    "buildings": ["skyscraper", "metro", "statue"],
+    "label": "แลนด์มาร์ก: ตึกระฟ้า รถไฟฟ้า และอนุสาวรีย์",
+    "coins": 5000,
+    "population": 1000
+  },
+  "tree": {
+    "building": "tree",
+    "label": "ต้นไม้",
+    "coins": 5,
+    "population": 1
+  },
+  "streetlamp": {
+    "building": "streetlamp",
+    "label": "เสาไฟ",
+    "coins": 5,
+    "population": 0
+  }
+}

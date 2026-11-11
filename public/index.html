@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TikTok City Builder</title>
+  <style>
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #8bd5f3;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #fff
+    }
+
+    canvas {
+      display: block
+    }
+
+    #hud {
+      position: fixed;
+      inset: 18px 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      text-shadow: 0 2px 5px #244c50
+    }
+
+    .brand {
+      font-weight: 850;
+      font-size: 22px
+    }
+
+    .stats {
+      display: flex;
+      gap: 10px
+    }
+
+    .pill {
+      background: #172b2bcc;
+      border: 1px solid #ffffff33;
+      border-radius: 14px;
+      padding: 9px 14px;
+      font-weight: 750
+    }
+
+    .pill small {
+      display: block;
+      font-size: 10px;
+      opacity: .7;
+      letter-spacing: .08em
+    }
+
+    #connector-status.connected {
+      color: #a2f0a7
+    }
+
+    #connector-status.reconnecting {
+      color: #ffd183
+    }
+
+    #goal {
+      position: fixed;
+      top: 92px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(360px, 70vw);
+      background: #172b2bd9;
+      border-radius: 12px;
+      padding: 9px 12px;
+      pointer-events: none;
+      text-shadow: none
+    }
+
+    #goalhead {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 750;
+      margin-bottom: 6px
+    }
+
+    #track {
+      height: 7px;
+      background: #ffffff30;
+      border-radius: 9px;
+      overflow: hidden
+    }
+
+    #progress {
+      height: 100%;
+      width: 0;
+      background: #f5c84c;
+      border-radius: 9px;
+      transition: width .4s
+    }
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      top: 90px;
+      transform: translate(-50%, -10px);
+      opacity: 0;
+      transition: .25s;
+      background: #172b2be8;
+      border: 1px solid #ffffff3d;
+      border-radius: 16px;
+      padding: 12px 20px;
+      font-weight: 750;
+      pointer-events: none;
+      white-space: pre-line;
+      text-align: center;
+      line-height: 1.5
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0)
+    }
+
+    #milestone {
+      position: fixed;
+      left: 50%;
+      bottom: 12vh;
+      transform: translate(-50%, 12px) scale(.94);
+      opacity: 0;
+      background: #f5c84cf2;
+      color: #342b10;
+      border: 2px solid #fff5b4;
+      border-radius: 18px;
+      padding: 14px 24px;
+      font-size: clamp(18px, 3vw, 30px);
+      font-weight: 900;
+      text-align: center;
+      box-shadow: 0 8px 30px #30220a55;
+      pointer-events: none;
+      transition: opacity .25s, transform .25s
+    }
+
+    #milestone.show {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1)
+    }
+
+    #disaster {
+      display: none;
+      position: fixed;
+      top: 150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(390px, 80vw);
+      background: #8a321ce8;
+      border: 1px solid #ffcf7370;
+      border-radius: 14px;
+      padding: 10px 14px;
+      pointer-events: none;
+      text-shadow: none
+    }
+
+    #disaster.active {
+      display: block
+    }
+
+    #disasterhead {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 6px
+    }
+
+    #repair-track {
+      height: 8px;
+      background: #ffffff40;
+      border-radius: 8px;
+      overflow: hidden
+    }
+
+    #repair-progress {
+      height: 100%;
+      width: 0;
+      background: #ffd05b;
+      border-radius: 8px;
+      transition: width .3s
+    }
+
+    #repair-copy {
+      font-size: 11px;
+      margin-top: 5px;
+      opacity: .9
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      max-width: calc(100vw - 24px);
+      align-items: center;
+      background: #172b2be0;
+      padding: 8px;
+      border: 1px solid #ffffff33;
+      border-radius: 16px
+    }
+
+    #controls[hidden] {
+      display: none
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 9px 13px;
+      background: #f5c84c;
+      color: #342b10;
+      font-weight: 800;
+      cursor: pointer
+    }
+
+    button:hover {
+      filter: brightness(1.08)
+    }
+
+    #hint {
+      font-size: 11px;
+      opacity: .7;
+      padding: 0 5px
+    }
+  </style>
+</head>
+
+<body>
+  <div id="hud">
+    <div class="brand">🏙️ TikTok City</div>
+    <div class="stats">
+      <div class="pill"><small>CITY</small><span id="level">Village Lv.1</span></div>
+      <div class="pill"><small>POPULATION</small><span id="population">0 Citizens</span></div>
+      <div class="pill"><small>CITY COINS</small><span id="coins">0</span></div>
+      <div class="pill"><small>THIS LIVE</small><span id="live-status">Offline</span></div>
+      <div class="pill"><small>TIKFINITY</small><span id="connector-status">Connecting</span></div>
+    </div>
+  </div>
+  <div id="goal">
+    <div id="goalhead"><span id="goalname">Next goal: 2,000 citizens</span><span id="goalcount">0 / 2,000</span></div>
+    <div id="track">
+      <div id="progress"></div>
+    </div>
+  </div>
+  <div id="disaster">
+    <div id="disasterhead"><span id="disaster-title">🚨 เมืองกำลังต้องการความช่วยเหลือ</span><span id="repair-count">0 /
+        500</span></div>
+    <div id="repair-track">
+      <div id="repair-progress"></div>
+    </div>
+    <div id="repair-copy">ส่ง Gift เพื่อช่วยซ่อมเมือง</div>
+  </div>
+  <div id="toast"></div>
+  <div id="milestone" aria-live="polite"></div>
+  <div id="controls"><button data-gift="rose">🌹 Rose</button><button data-gift="heart">💖 Heart</button><button
+      data-gift="perfume">🌸 Perfume</button><button data-gift="sunglasses">🕶️ Sunglasses</button><button
+      data-gift="gg">🏆 GG</button><button data-gift="galaxy">🌌 Galaxy</button><button data-gift="universe">🌠
+      Universe</button><button data-gift="tree">🌳 Tree</button><button data-gift="streetlamp">💡
+      Streetlamp</button><button id="reset-preview">ล้าง Preview</button><span id="hint">Gift ทดลองชั่วคราว · ล้าง
+      Preview เพื่อล้างผล · ลากเพื่อเลื่อน · Scroll เพื่อซูม</span></div>
+  <script src="/vendor/pixi.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const app = new PIXI.Application({ resizeTo: window, backgroundColor: 0x8bd5f3, antialias: true }); document.body.appendChild(app.view);
+    const world = new PIXI.Container(); app.stage.addChild(world); world.sortableChildren = true;
+    // Ground and district markings are generated around the camera, so the visible world has no fixed edge.
+    const terrainLayer = new PIXI.Container(); world.addChild(terrainLayer);
+    const trafficLayer = new PIXI.Container(); world.addChild(trafficLayer);
+    const cityLayer = new PIXI.Container(); cityLayer.zIndex = 2; cityLayer.sortableChildren = true; world.addChild(cityLayer);
+    const renderedBuildings = new Map();
+    const previewMode = new URLSearchParams(location.search).get('preview') === '1';
+    const socket = previewMode ? io('/preview') : io(); let toastTimer, toastBusy = false; const toastQueue = []; let isDragging = false, last = { x: 0, y: 0 };
+    if (!previewMode) document.querySelector('#controls').hidden = true;
+    function center() { world.position.set(innerWidth / 2, innerHeight / 2) } center(); window.addEventListener('resize', center);
+    function drawBuilding(b) {
+      const c = new PIXI.Container(); c.x = b.x; c.y = b.y; c.zIndex = b.y; const g = new PIXI.Graphics();
+      const style = { house: [0xf3a65a, 0x9c5732], shop: [0xf8d15b, 0x527d67], school: [0xf2e4c4, 0x5278ae], park: [0x59a95b, 0x397d45], tree: [0x58a957, 0x755131], streetlamp: [0xffe28a, 0x45504b], hospital: [0xf2eee7, 0xd95353], mall: [0xf0a5cb, 0x9d5da0], skyscraper: [0x79c2d9, 0x456b9a], airport: [0xf1eee4, 0x6f8290], bridge: [0x8c9595, 0x4c5b60], metro: [0x8fd3c7, 0x417b76], statue: [0xe5bd71, 0x84652b] }[b.type] || [0xe3b47b, 0x80583d];
+      if (b.type === 'park') { g.beginFill(style[0]).drawEllipse(0, 5, 33, 14).endFill(); g.lineStyle(5, style[1]).moveTo(0, 0).lineTo(0, 23); g.beginFill(style[1]).drawCircle(0, -8, 13).endFill() }
+      else if (b.type === 'tree') { g.beginFill(style[1]).drawRect(-3, 1, 6, 20).endFill(); g.beginFill(style[0]).drawCircle(0, -6, 15).drawCircle(-10, 0, 10).drawCircle(10, 0, 10).endFill() }
+      else if (b.type === 'streetlamp') { g.lineStyle(4, style[1]).moveTo(0, 22).lineTo(0, -18).lineTo(10, -18); g.beginFill(style[0]).drawCircle(12, -18, 6).endFill() }
+      else if (b.type === 'bridge') { g.beginFill(style[0]).drawRect(-32, -8, 64, 16).endFill(); g.lineStyle(3, style[1]).moveTo(-28, -8).quadraticCurveTo(0, -25, 28, -8); for (let x = -24; x <= 24; x += 16)g.lineStyle(2, style[1]).moveTo(x, -8).lineTo(x, -20) }
+      else if (b.type === 'airport') { g.beginFill(style[0]).drawRect(-24, -18, 48, 36).endFill(); g.beginFill(style[1]).drawRect(12, -31, 12, 13).endFill(); g.lineStyle(4, 0x4f5356).moveTo(-25, 23).lineTo(25, 23); g.lineStyle(2, 0xffffff).moveTo(-18, 23).lineTo(-10, 23).moveTo(-3, 23).lineTo(5, 23).moveTo(12, 23).lineTo(20, 23) }
+      else if (b.type === 'metro') { g.beginFill(style[0]).drawRoundedRect(-33, -16, 66, 32, 8).endFill(); g.lineStyle(4, style[1]).moveTo(-30, 21).lineTo(30, 21); g.lineStyle(3, 0xffffff, .8).moveTo(-20, -8).lineTo(20, -8).moveTo(-20, 0).lineTo(20, 0) }
+      else if (b.type === 'statue') { g.beginFill(style[0]).drawRect(-23, 8, 46, 16).endFill(); g.beginFill(style[1]).drawRect(-8, -15, 16, 23).drawCircle(0, -21, 6).endFill() }
+      else { const h = b.type === 'skyscraper' ? 50 : b.type === 'mall' ? 43 : 32, w = b.type === 'skyscraper' ? 32 : 44; const roof = b.type === 'skyscraper' ? 7 : b.type === 'mall' ? 8 : 12; g.beginFill(style[0]).drawRect(-w / 2, -h / 2, w, h).endFill(); g.beginFill(style[1]).moveTo(-w / 2, -h / 2).lineTo(0, -h / 2 - roof).lineTo(w / 2, -h / 2).closePath().endFill(); if (['school', 'hospital', 'mall', 'skyscraper'].includes(b.type)) { g.lineStyle(3, 0xffffff, .8); for (let wx = -w / 2 + 8; wx < w / 2 - 3; wx += 11)g.moveTo(wx, -h / 2 + 8).lineTo(wx, -h / 2 + 16) } }
+      c.addChild(g); const label = new PIXI.Text(({ house: '🏠', shop: '🏪', school: '🏫', park: '🌳', tree: '🌳', streetlamp: '💡', hospital: '🏥', mall: '🏬', skyscraper: '🏙️', airport: '✈️', bridge: '🌉', metro: '🚇', statue: '🗽' })[b.type] || '🏠', { fontSize: 18 }); label.anchor.set(.5); label.y = -22; c.addChild(label); cityLayer.addChild(c); renderedBuildings.set(`${b.x}:${b.y}`, c);
+    }
+    let viewportTimer = 0, viewportRequest = 0;
+    let cityLevel = 1, traffic = [];
+    function drawTerrain(bounds) {
+      for (const child of terrainLayer.removeChildren()) child.destroy({ children: true }); for (const child of trafficLayer.removeChildren()) child.destroy({ children: true }); traffic = [];
+      const g = new PIXI.Graphics();
+      g.beginFill(0x6bbf69).drawRect(bounds.left - 500, bounds.top - 500, bounds.right - bounds.left + 1000, bounds.bottom - bounds.top + 1000).endFill();
+      const minX = Math.floor(bounds.left / 440) - 1, maxX = Math.ceil(bounds.right / 440) + 1, minY = Math.floor(bounds.top / 360) - 1, maxY = Math.ceil(bounds.bottom / 360) + 1;
+      for (let x = minX; x <= maxX; x++)for (let y = minY; y <= maxY; y++) {
+        const bx = x * 440 + 55, by = y * 360 + 45;
+        if (cityLevel >= 2) { g.beginFill(0x666d62).drawRect(bx - 20, by - 20, 440, 40).drawRect(bx - 20, by - 20, 40, 360).endFill(); g.lineStyle(2, 0xf6e7a0, .7); for (let d = 0; d < 440; d += 34)g.moveTo(bx + d, by).lineTo(bx + d + 17, by); for (const offset of [72, 292]) { const lx = bx + offset, ly = by + 15; g.lineStyle(3, 0x45504b).moveTo(lx, ly + 8).lineTo(lx, ly - 6); g.beginFill(0xf7dc83).drawCircle(lx, ly - 9, 4).endFill(); } }
+        else { g.lineStyle(1, 0xffffff, .14).drawRoundedRect(bx + 24, by + 24, 392, 312, 15) }
+      }
+      terrainLayer.addChild(g);
+      if (cityLevel >= 2) {
+        for (let y = minY; y <= maxY; y++)for (let n = 0; n < 2; n++) { const car = new PIXI.Text(n ? '🚙' : '🚗', { fontSize: 20 }); car.anchor.set(.5); car.y = y * 360 + 45 - 12 + n * 23; car.x = minX * 440 + 55 + n * 210; trafficLayer.addChild(car); traffic.push({ sprite: car, min: minX * 440 + 35, max: (maxX + 1) * 440 + 55, speed: 65 + n * 18 }) }
+        for (let x = minX; x <= maxX; x++)for (let n = 0; n < 2; n++) { const walker = new PIXI.Text('🚶', { fontSize: 15 }); walker.anchor.set(.5); walker.x = x * 440 + 55 + 5 + n * 14; walker.y = minY * 360 + 45 + 35; trafficLayer.addChild(walker); traffic.push({ sprite: walker, min: minY * 360 + 35, max: (maxY + 1) * 360 + 45, speed: 20 + n * 8, vertical: true }) }
+      }
+    }
+    app.ticker.add((ticker) => { const seconds = ticker.deltaMS / 1000; for (const item of traffic) { const axis = item.vertical ? 'y' : 'x'; item.sprite[axis] += item.speed * seconds; if (item.sprite[axis] > item.max) item.sprite[axis] = item.min } });
+    function loadViewport() {
+      const scale = world.scale.x, margin = 180; const bounds = { left: (-world.x) / scale - margin, top: (-world.y) / scale - margin, right: (innerWidth - world.x) / scale + margin, bottom: (innerHeight - world.y) / scale + margin };
+      const request = ++viewportRequest, endpoint = previewMode ? '/api/preview/buildings' : '/api/buildings'; drawTerrain(bounds); return fetch(`${endpoint}?${new URLSearchParams(bounds)}`).then(r => r.json()).then(data => { if (request !== viewportRequest) return; const buildings = data.buildings || [], visible = new Set(buildings.map(b => `${b.x}:${b.y}`)); for (const [key, item] of renderedBuildings) { if (!visible.has(key)) { cityLayer.removeChild(item); item.destroy({ children: true }); renderedBuildings.delete(key) } } for (const b of buildings) if (!renderedBuildings.has(`${b.x}:${b.y}`)) drawBuilding(b) }).catch(() => { });
+    }
+    function scheduleViewport() { clearTimeout(viewportTimer); viewportTimer = setTimeout(loadViewport, 100) }
+    function updateState(s) { cityLevel = s.level || 1; const population = s.population || 0; const tier = cityLevel <= 2 ? 'Village' : cityLevel <= 5 ? 'Small City' : cityLevel <= 10 ? 'City' : 'Metropolis'; document.querySelector('#level').textContent = `${tier} Lv.${cityLevel}`; document.querySelector('#population').textContent = `${population.toLocaleString()} Citizens`; document.querySelector('#coins').textContent = (s.coins || 0).toLocaleString(); const live = s.isLive ? s.liveSession : null; document.querySelector('#live-status').textContent = live ? `LIVE · ${live.coins || 0} Coins · +${(live.population || 0).toLocaleString()}` : 'Offline'; const connector = document.querySelector('#connector-status'); connector.textContent = ({ connected: 'Connected', reconnecting: 'Reconnecting', connecting: 'Connecting' })[s.tikFinityStatus] || 'Unknown'; connector.className = s.tikFinityStatus || ''; const target = [2000, 5000, 10000, 25000, 50000].find(n => population < n) || Math.ceil((population + 1) / 50000) * 50000; document.querySelector('#goalname').textContent = `Next goal: ${target.toLocaleString()} citizens`; document.querySelector('#goalcount').textContent = `${population.toLocaleString()} / ${target.toLocaleString()}`; document.querySelector('#progress').style.width = `${Math.min(100, population / target * 100)}%`; const disaster = s.disaster, panel = document.querySelector('#disaster'); panel.classList.toggle('active', Boolean(disaster)); if (disaster) { document.querySelector('#disaster-title').textContent = `${disaster.emoji} ${disaster.label} · Need ${disaster.requiredCoins} Coins to rebuild`; document.querySelector('#repair-count').textContent = `${disaster.contributedCoins} / ${disaster.requiredCoins}`; document.querySelector('#repair-progress').style.width = `${Math.min(100, disaster.contributedCoins / disaster.requiredCoins * 100)}%` } loadViewport() }
+    function showNextToast() {
+      if (toastBusy || !toastQueue.length) return;
+      toastBusy = true;
+      const { text, duration } = toastQueue.shift(), el = document.querySelector('#toast');
+      el.classList.remove('show'); el.textContent = text; void el.offsetWidth; el.classList.add('show');
+      toastTimer = setTimeout(() => { el.classList.remove('show'); setTimeout(() => { toastBusy = false; showNextToast() }, 280) }, duration);
+    }
+    function enqueueToast(text, duration = 4200) { if (toastQueue.length >= 30) toastQueue.shift(); toastQueue.push({ text, duration }); showNextToast() }
+    function showToast(e) { const count = e.giftCount > 1 ? ` ×${e.giftCount}` : ''; const diamonds = Number(e.diamonds) > 0 ? ` · Gift value ${Number(e.diamonds).toLocaleString()} Diamonds` : ''; const buildings = e.buildingCount > 1 ? ` · สร้าง ${e.buildingCount} จุด` : ''; enqueueToast(`${e.username} บริจาค +${e.coins} City Coins${diamonds} · ส่ง ${e.giftName}${count}\n${e.username} สร้าง${e.buildingLabel}${buildings} · Population +${e.populationAdded}`) }
+    const buildQueue = []; let activeBuilders = 0; const maxActiveBuilders = 3, maxAnimationsPerGift = 12, maxAnimationBacklog = 18;
+    function createBuilder() {
+      const sprite = new PIXI.Container(), legs = [], arms = [];
+      const limb = (color, length) => { const pivot = new PIXI.Container(), line = new PIXI.Graphics(); line.lineStyle(3, color, 1, .5).moveTo(0, 0).lineTo(0, length); pivot.addChild(line); return pivot };
+      const rearLeg = limb(0x34434a, 8), frontLeg = limb(0x34434a, 8); rearLeg.x = -2; rearLeg.y = 3; frontLeg.x = 2; frontLeg.y = 3; legs.push(rearLeg, frontLeg);
+      const rearArm = limb(0xf1bd92, 6), frontArm = limb(0xf1bd92, 6); rearArm.x = -4; rearArm.y = -3; frontArm.x = 4; frontArm.y = -3; arms.push(rearArm, frontArm);
+      sprite.addChild(rearLeg, frontLeg, rearArm, frontArm);
+      const body = new PIXI.Graphics(); body.beginFill(0x318b78).drawRoundedRect(-4, -5, 8, 10, 2).endFill(); sprite.addChild(body);
+      const head = new PIXI.Graphics(); head.beginFill(0xf1bd92).drawCircle(0, -9, 4).endFill(); head.beginFill(0xf2c94c).drawRoundedRect(-5, -14, 10, 4, 2).drawRoundedRect(-6, -11, 12, 2, 1).endFill(); sprite.addChild(head);
+      return { sprite, legs, arms };
+    }
+    function runNextBuild() {
+      while (activeBuilders < maxActiveBuilders && buildQueue.length) {
+        const position = buildQueue.shift(), key = `${position.x}:${position.y}`, target = renderedBuildings.get(key); if (!target) continue; activeBuilders++;
+        const scale = world.scale.x, left = (-world.x) / scale, right = (innerWidth - world.x) / scale, arrival = position.x, exit = right + 48, y = position.y + 4;
+        target.scale.set(.08); target.alpha = 0;
+        const builder = createBuilder(), worker = builder.sprite; worker.x = left - 48; worker.y = y; worker.zIndex = y + 6; cityLayer.addChild(worker);
+        const start = performance.now(), duration = 1800;
+        const tick = () => { const t = Math.min(1, (performance.now() - start) / duration), stride = Math.sin(t * 24); if (t < .4) worker.x = left - 48 + (arrival - left + 48) * (t / .4); else worker.x = arrival + (exit - arrival) * Math.min(1, (t - .4) / .52); worker.y = y + Math.abs(stride) * 1.2; builder.legs[0].rotation = stride * .72; builder.legs[1].rotation = -stride * .72; builder.arms[0].rotation = -stride * .55; builder.arms[1].rotation = stride * .55; const buildT = Math.max(0, Math.min(1, (t - .34) / .2)); const pop = buildT < .72 ? .08 + buildT / .72 * 1.04 : 1.12 - (buildT - .72) / .28 * .12; target.scale.set(t < .34 ? .08 : Math.max(.08, pop)); target.alpha = Math.min(1, Math.max(0, (t - .34) * 5)); worker.alpha = t > .88 ? Math.max(0, (1 - t) / .12) : 1; if (t >= 1) { target.scale.set(1); app.ticker.remove(tick); worker.destroy({ children: true }); activeBuilders--; runNextBuild() } };
+        app.ticker.add(tick);
+      }
+    }
+    const buildEventQueue = []; let processingBuildEvents = false;
+    function focusBuildEvent(e) {
+      const positions = (e.buildings || []).filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+      if (!positions.length) return Promise.resolve();
+      const x = positions.reduce((sum, p) => sum + p.x, 0) / positions.length;
+      const y = positions.reduce((sum, p) => sum + p.y, 0) / positions.length;
+      const scale = world.scale.x, screenX = world.x + x * scale, screenY = world.y + y * scale;
+      if ((screenX >= 110 && screenX <= innerWidth - 110 && screenY >= 120 && screenY <= innerHeight - 120) || isDragging) return Promise.resolve();
+      const startX = world.x, startY = world.y, endX = innerWidth / 2 - x * scale, endY = innerHeight / 2 - y * scale;
+      const bounds = { left: x - innerWidth / scale / 2, right: x + innerWidth / scale / 2, top: y - innerHeight / scale / 2, bottom: y + innerHeight / scale / 2 };
+      drawTerrain(bounds);
+      return new Promise(resolve => {
+        const started = performance.now(), duration = 520;
+        const step = now => { const t = Math.min(1, (now - started) / duration), eased = t * t * (3 - 2 * t); world.position.set(startX + (endX - startX) * eased, startY + (endY - startY) * eased); if (t < 1 && !isDragging) requestAnimationFrame(step); else { world.position.set(isDragging ? world.x : endX, isDragging ? world.y : endY); resolve() } };
+        requestAnimationFrame(step);
+      });
+    }
+    async function drainBuildEvents() {
+      if (processingBuildEvents) return;
+      processingBuildEvents = true;
+      while (buildEventQueue.length) {
+        const e = buildEventQueue.shift(); await focusBuildEvent(e); await loadViewport();
+        let queued = 0; const available = Math.max(0, maxAnimationBacklog - activeBuilders - buildQueue.length), limit = Math.min(maxAnimationsPerGift, available);
+        for (const position of e.buildings || []) { if (queued >= limit) break; if (renderedBuildings.has(`${position.x}:${position.y}`)) { buildQueue.push(position); queued++ } }
+        runNextBuild();
+      }
+      processingBuildEvents = false;
+    }
+    function buildAnimation(e) { if (buildEventQueue.length >= 12) buildEventQueue[buildEventQueue.length - 1] = e; else buildEventQueue.push(e); drainBuildEvents() }
+    socket.on('city:state', updateState); socket.on('gift:built', e => { showToast(e); buildAnimation(e) });
+    let milestoneTimer; function showMilestone(e) { const el = document.querySelector('#milestone'); el.textContent = `🎉 ${e.username} และชุมชนพาเมืองถึง ${e.population.toLocaleString()} Citizens!`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(milestoneTimer); milestoneTimer = setTimeout(() => el.classList.remove('show'), 4200) } socket.on('city:milestone', showMilestone);
+    socket.on('disaster:started', d => enqueueToast(`${d.emoji} ${d.label}! ต้องการ ${d.requiredCoins} City Coins เพื่อซ่อมเมือง`, 4500));
+    socket.on('city:announcement', e => enqueueToast(e.text, 4500));
+    const cityEndpoint = previewMode ? '/api/preview/city' : '/api/city';
+    fetch(cityEndpoint).then(r => r.json()).then(updateState);
+    if (previewMode) {
+      document.querySelectorAll('[data-gift]').forEach(btn => btn.onclick = async () => {
+        const response = await fetch('/api/preview/gift', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: 'ผู้ชมทดลอง', giftName: btn.dataset.gift }) });
+        const result = await response.json();
+        if (result.ignored) { enqueueToast(result.reason, 3500); return; }
+        if (result.snapshot) { updateState(result.snapshot); if (result.event) { showToast(result.event); buildAnimation(result.event); } if (result.milestone) showMilestone(result.milestone); }
+      });
+      document.querySelector('#reset-preview').onclick = async () => { const response = await fetch('/api/preview/reset', { method: 'POST' }); const result = await response.json(); updateState(result.snapshot); };
+    }
+    app.view.addEventListener('pointerdown', e => { if (e.target.closest?.('#controls')) return; isDragging = true; last = { x: e.clientX, y: e.clientY }; app.view.setPointerCapture(e.pointerId) });
+    app.view.addEventListener('pointermove', e => { if (!isDragging) return; world.x += e.clientX - last.x; world.y += e.clientY - last.y; last = { x: e.clientX, y: e.clientY }; scheduleViewport() }); app.view.addEventListener('pointerup', () => isDragging = false); app.view.addEventListener('pointercancel', () => isDragging = false);
+    app.view.addEventListener('wheel', e => { e.preventDefault(); const scale = Math.min(2.2, Math.max(.35, world.scale.x * (e.deltaY < 0 ? 1.1 : .9))); world.scale.set(scale); scheduleViewport() }, { passive: false });
+  </script>
+</body>
+
+</html>
